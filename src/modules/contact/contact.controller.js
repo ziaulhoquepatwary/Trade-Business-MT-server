@@ -1,13 +1,13 @@
 import nodemailer from "nodemailer";
-import catchAsync from "../../utils/catchAsync";
+import catchAsync from "../../utils/catchAsync.js";
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT) || 465,
+    host: "smtp.gmail.com",
+    port: 465,
     secure: true,
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: "mzh.mmrahman@gmail.com",
+        pass: "llac ubms yymp nuzt",
     },
 });
 
@@ -22,9 +22,9 @@ export const contactEmail = catchAsync(async (req, res) => {
     }
 
     const mailOptions = {
-        from: `"${name}" <${process.env.SMTP_USER}>`,
+        from: `"${name}" <mzh.mmrahman@gmail.com>`,
         replyTo: email,
-        to: process.env.SMTP_USER,
+        to: "mzh.mmrahman@gmail.com",
         subject: `🚀 New Service Inquiry: ${service} - ${name}`,
         html: `
       <!DOCTYPE html>
