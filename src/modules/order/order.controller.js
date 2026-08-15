@@ -8,7 +8,10 @@ const generatePayPalAccessToken = async () => {
     const response = await fetch(`${process.env.PAYPAL_BASE_URL}/v1/oauth2/token`, {
         method: "POST",
         body: "grant_type=client_credentials",
-        headers: { Authorization: `Basic ${auth}` },
+        headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
     });
     const data = await response.json();
     return data.access_token;
@@ -58,8 +61,8 @@ export const createPaymentSession = catchAsync(async (req, res) => {
                     amount: { currency_code: "USD", value: amount.toString() }
                 }],
                 application_context: {
-                    return_url: `${process.env.FRONTEND_URL}/payment-success`,
-                    cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`
+                    return_url: `${process.env.FRONTEND_URL}/payment-success?orderId=${newOrder._id}`,
+                    cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled?orderId=${newOrder._id}`
                 }
             })
         });
@@ -85,38 +88,59 @@ export const createPaymentSession = catchAsync(async (req, res) => {
 export const capturePayPalPayment = catchAsync(async (req, res) => {
     const { token, orderId } = req.body;
 
-    const order = await Order.findById(orderId);
-    if (!order || order.paymentStatus === 'PAID') {
-        return res.status(400).json({ success: false, message: "Order not found or already paid" });
+    if (!token || !orderId) {
+        return res.status(400).json({ success: false, message: "Missing token or orderId" });
     }
 
-    const accessToken = await generatePayPalAccessToken();
-    const captureRes = await fetch(`${process.env.PAYPAL_BASE_URL}/v2/checkout/orders/${token}/capture`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`
-        }
-    });
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    if (order.paymentStatus === 'PAID') {
+        return res.status(200).json({ success: true, message: "Order not found or already paid" });
+    }
 
-    const captureData = await captureRes.json();
+    try {
+        const accessToken = await generatePayPalAccessToken();
 
-    if (captureData.status === 'COMPLETED') {
-        order.paymentStatus = 'PAID';
-        await order.save();
-
-        await Gateway.findOneAndUpdate(
-            { name: 'PAYPAL' },
-            { $inc: { currentVolume: order.amount } }
-        );
-
-        return res.status(200).json({
-            success: true,
-            message: "Payment captured successfully!"
+        const captureRes = await fetch(`${process.env.PAYPAL_BASE_URL}/v2/checkout/orders/${token}/capture`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({})
         });
-    } else {
-        order.paymentStatus = 'FAILED';
-        await order.save();
-        return res.status(400).json({ success: false, message: "Payment capture failed" });
+
+        const captureData = await captureRes.json();
+
+        console.log("PayPal Capture Status:", captureData.status);
+
+        if (captureData.status === 'COMPLETED' || captureData.status === 'APPROVED') {
+            order.paymentStatus = 'PAID';
+            order.transactionId = captureData.id || token;
+            await order.save();
+
+            await Gateway.findOneAndUpdate(
+                { name: 'PAYPAL' },
+                { $inc: { currentVolume: order.amount } }
+            );
+
+            return res.status(200).json({ success: true, message: "Payment captured successfully!" });
+
+        } else if (captureData.status === 'PENDING') {
+            order.paymentStatus = 'PAID';
+            order.transactionId = captureData.id || token;
+            await order.save();
+            return res.status(200).json({ success: true, message: "Payment is pending review but accepted." });
+
+        } else {
+            order.paymentStatus = 'FAILED';
+            await order.save();
+            return res.status(400).json({ success: false, message: `Payment failed with status: ${captureData.status}` });
+        }
+    } catch (error) {
+        console.error("Backend Capture Error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error during capture" });
     }
 });
