@@ -58,8 +58,8 @@ export const createPaymentSession = catchAsync(async (req, res) => {
                     amount: { currency_code: "USD", value: amount.toString() }
                 }],
                 application_context: {
-                    return_url: `${process.env.FRONTEND_URL}/payment-success?orderId=${newOrder._id}`,
-                    cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled?orderId=${newOrder._id}`
+                    return_url: `${process.env.FRONTEND_URL}/payment-success`,
+                    cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`
                 }
             })
         });

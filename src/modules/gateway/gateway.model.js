@@ -11,7 +11,7 @@ const gatewaySchema = new mongoose.Schema(
         limit: {
             type: Number,
             required: true,
-            default: 5000
+            default: 10000
         },
         currentVolume: {
             type: Number,
@@ -23,7 +23,10 @@ const gatewaySchema = new mongoose.Schema(
             default: true
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        versionKey: false,
+    }
 );
 
 const Gateway = mongoose.model("Gateway", gatewaySchema);

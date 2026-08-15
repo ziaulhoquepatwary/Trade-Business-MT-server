@@ -37,7 +37,10 @@ const orderSchema = new mongoose.Schema(
             type: String
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        versionKey: false,
+    }
 );
 
 const Order = mongoose.model("Order", orderSchema);
