@@ -1,6 +1,6 @@
 import catchAsync from "../../utils/catchAsync.js";
 import Gateway from "../gateway/gateway.model.js";
-import { Order } from "../models/order.model.js";
+import Order from "./order.model.js";
 
 
 const generatePayPalAccessToken = async () => {
