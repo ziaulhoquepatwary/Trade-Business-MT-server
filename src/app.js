@@ -9,6 +9,7 @@ import QuotationRoute from "./modules/quotation/quotation.route.js";
 import ReviewRoutes from "./modules/reviews/review.route.js";
 import OrderRoute from "./modules/order/order.route.js";
 import GatewayRoute from "./modules/gateway/gateway.route.js";
+import WebhookRoute from "./modules/order/order.webhook.route.js";
 import { keepServerAlive } from "./keepAlive.js";
 
 const createApp = (auth) => {
@@ -23,6 +24,9 @@ const createApp = (auth) => {
     }));
 
     app.use(cookieParser());
+
+    app.use("/api/webhooks", WebhookRoute);
+
     app.use(express.json());
 
     app.all("/api/auth/*splat", toNodeHandler(auth));
