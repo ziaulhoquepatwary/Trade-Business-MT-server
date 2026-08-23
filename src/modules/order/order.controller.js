@@ -64,3 +64,39 @@ export const createPaymentSession = catchAsync(async (req, res) => {
         });
     }
 });
+
+// Universal payment completion and volume tracking handler
+export const confirmPaymentAndIncreaseVolume = async (orderId, gatewayName, transactionId) => {
+    const order = await Order.findById(orderId);
+    if (!order || order.paymentStatus === 'PAID') {
+        return; // Already paid or not found
+    }
+
+    // 1. Update order status to PAID
+    order.paymentStatus = 'PAID';
+    order.transactionId = transactionId || order.transactionId;
+    await order.save();
+
+    // 2. Increment the current volume of the specific gateway used
+    await Gateway.findOneAndUpdate(
+        { name: gatewayName.toUpperCase() },
+        { $inc: { currentVolume: order.amount } }
+    );
+};
+
+// Endpoint for frontend capture (e.g., PayPal return)
+export const capturePaymentController = catchAsync(async (req, res) => {
+    const { orderId, token } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    await confirmPaymentAndIncreaseVolume(orderId, order.paymentGatewayUsed, token);
+
+    res.status(200).json({
+        success: true,
+        message: "Payment captured and volume updated successfully"
+    });
+});

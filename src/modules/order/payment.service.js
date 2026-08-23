@@ -1,6 +1,8 @@
 import Stripe from "stripe";
 import crypto from "crypto";
-import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
