@@ -8,6 +8,7 @@ import ContactRoute from "./modules/contact/contact.route.js";
 import QuotationRoute from "./modules/quotation/quotation.route.js";
 import ReviewRoutes from "./modules/reviews/review.route.js";
 import OrderRoute from "./modules/order/order.route.js";
+import GatewayRoute from "./modules/gateway/gateway.route.js";
 
 const createApp = (auth) => {
     const app = express();
@@ -30,6 +31,7 @@ const createApp = (auth) => {
     app.use("/api/quotation", QuotationRoute);
     app.use("/api/reviews", ReviewRoutes);
     app.use("/api/orders", OrderRoute);
+    app.use("/api/gateways", GatewayRoute);
 
     app.get("/", (req, res) => {
         res.send("M traders server is running successfully");

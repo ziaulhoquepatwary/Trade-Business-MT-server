@@ -6,12 +6,17 @@ const gatewaySchema = new mongoose.Schema(
             type: String,
             required: true,
             unique: true,
-            enum: ['PAYPAL', 'STRIPE', 'AUTHORIZE_NET']
+            uppercase: true, // e.g., 'PAYPAL', 'STRIPE', 'ATOM'
+        },
+        priority: {
+            type: Number,
+            required: true,
+            unique: true, // Ensures no two gateways have the same priority (e.g., 1, 2, 3)
         },
         limit: {
             type: Number,
             required: true,
-            default: 10000
+            default: 5000
         },
         currentVolume: {
             type: Number,
