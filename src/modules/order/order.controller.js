@@ -3,8 +3,32 @@ import Gateway from "../gateway/gateway.model.js";
 import Order from "./order.model.js";
 import { processPaymentGateway } from "./payment.service.js";
 
+// Helper function to check date and reset limits dynamically
+const checkAndResetDailyLimits = async () => {
+    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+    // Find if there are any gateways whose lastResetDate is not today
+    const needsReset = await Gateway.exists({ lastResetDate: { $ne: today } });
+
+    if (needsReset) {
+        console.log(`[System] New day detected (${today}). Resetting gateway volumes to 0.`);
+
+        await Gateway.updateMany(
+            { lastResetDate: { $ne: today } },
+            {
+                $set: {
+                    currentVolume: 0,
+                    lastResetDate: today
+                }
+            }
+        );
+    }
+};
+
 export const createPaymentSession = catchAsync(async (req, res) => {
     const { name, email, amount, orderType, packageDetails, customPurpose } = req.body;
+
+    await checkAndResetDailyLimits();
 
     // ১. Find the best active gateway based on limits and priority
     const selectedGateway = await Gateway.findOne({

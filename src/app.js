@@ -9,6 +9,7 @@ import QuotationRoute from "./modules/quotation/quotation.route.js";
 import ReviewRoutes from "./modules/reviews/review.route.js";
 import OrderRoute from "./modules/order/order.route.js";
 import GatewayRoute from "./modules/gateway/gateway.route.js";
+import { keepServerAlive } from "./keepAlive.js";
 
 const createApp = (auth) => {
     const app = express();
@@ -36,6 +37,9 @@ const createApp = (auth) => {
     app.get("/", (req, res) => {
         res.send("M traders server is running successfully");
     });
+
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+    keepServerAlive(backendUrl);
 
     return app;
 }

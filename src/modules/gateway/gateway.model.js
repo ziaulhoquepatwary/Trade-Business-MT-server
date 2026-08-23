@@ -23,6 +23,11 @@ const gatewaySchema = new mongoose.Schema(
             required: true,
             default: 0
         },
+        lastResetDate: {
+            type: String,
+            // default will save today's date like "2026-08-23"
+            default: () => new Date().toISOString().split('T')[0]
+        },
         isActive: {
             type: Boolean,
             default: true
